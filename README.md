@@ -1,2 +1,2 @@
-# jsonQuery
-Search/filter/Select attributes over JSON content
+# jsonQuerry
+Find/Filter/Keep attributes over JSON content
