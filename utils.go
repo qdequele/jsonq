@@ -55,15 +55,25 @@ func splitComa(line KeepRequest) []KeepRequest {
 	return array
 }
 
-func getKeys(cmd KeepRequest) (stay []KeepRequest, cont []KeepRequest) {
+func GetKeys(cmd KeepRequest) (stay []KeepRequest, cont []KeepRequest) {
 	stay = []KeepRequest{}
 	cont = []KeepRequest{}
-	for _, sb := range splitBraces(cmd) {
-		for _, sc := range splitComa(sb) {
+	if strings.Index(string(cmd), ":") != -1 && strings.Index(string(cmd), ":") < strings.Index(string(cmd), "{") {
+		for _, sc := range splitComa(cmd) {
 			if strings.Contains(string(sc), ":") {
 				cont = append(cont, sc)
 			} else {
 				stay = append(stay, sc)
+			}
+		}
+	} else {
+		for _, sb := range splitBraces(cmd) {
+			for _, sc := range splitComa(sb) {
+				if strings.Contains(string(sc), ":") {
+					cont = append(cont, sc)
+				} else {
+					stay = append(stay, sc)
+				}
 			}
 		}
 	}

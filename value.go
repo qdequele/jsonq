@@ -339,8 +339,11 @@ func NewKeepRequest(req string) (KeepRequest, error) {
 }
 
 func (v *Value) Keep(request KeepRequest) (interface{}, error) {
+	// fmt.Println(request)
+	// fmt.Println(v.String())
 	switch v.Type() {
 	case TypeArray:
+		// fmt.Println("is Array")
 		pValue, err := v.Array()
 		if err != nil {
 			return nil, err
@@ -355,14 +358,20 @@ func (v *Value) Keep(request KeepRequest) (interface{}, error) {
 		}
 		return rValues, nil
 	case TypeObject:
+		// fmt.Println("is Object")
 		pValue, err := v.Object()
 		if err != nil {
 			return nil, err
 		}
 		rValues := map[string]interface{}{}
-		stays, conts := getKeys(request)
+		stays, conts := GetKeys(request)
 		for _, stay := range stays {
-			rValues[string(stay)], err = pValue.Get(string(stay)).Keep("")
+			// fmt.Printf("key : %s", stay)
+			next := pValue.Get(string(stay))
+			if next == nil {
+				return nil, err
+			}
+			rValues[string(stay)], err = next.Keep("")
 			if err != nil {
 				return nil, err
 			}
@@ -377,7 +386,6 @@ func (v *Value) Keep(request KeepRequest) (interface{}, error) {
 		}
 		return rValues, nil
 	case TypeString:
-		fmt.Println(v.String())
 		return v.String(), nil
 	case TypeNumber:
 		return v.Float64()

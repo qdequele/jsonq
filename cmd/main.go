@@ -10,20 +10,38 @@ import (
 
 func main() {
 
-	querry := `{users:{username},topics:{topics:{title,fancy_title}}}`
+	querry := `{users:{username},topics:{topics:{posters:{description}}}}` //
 
 	var p jsonQuerry.Parser
 	v, err := p.Parse(largeFixture)
 	if err != nil {
 		log.Fatalf("cannot parse json: %s", err)
 	}
-	value, err := v.Search("topics", "topics", "title")
-	if err != nil {
-		log.Fatalf("cannot parse json: %s", err)
-	}
-	fmt.Println(value)
+	// value, err := v.Search("topics", "topics", "title")
+	// if err != nil {
+	// 	log.Fatalf("cannot parse json: %s", err)
+	// }
+	// fmt.Println(value)
 
 	request, _ := jsonQuerry.NewKeepRequest(querry)
+
+	// stays, conts := jsonQuerry.GetKeys(request)
+	// fmt.Printf("stays - %s\n", stays)
+	// fmt.Printf("conts - %s\n", conts)
+
+	// for _, cont := range conts {
+	// 	newstays, newconts := jsonQuerry.GetKeys(cont)
+	// 	fmt.Printf("newstays - %s\n", newstays)
+	// 	fmt.Printf("newconts - %s\n", newconts)
+	// 	for _, newcont := range newconts {
+	// 		newnewstays, newnewconts := jsonQuerry.GetKeys(newcont)
+	// 		fmt.Printf("newnewstays - %s\n", newnewstays)
+	// 		fmt.Printf("newnewconts - %s\n", newnewconts)
+	// 		for newnewcont := range newnewconts {
+	// 			fmt.Printf("newnewcont - %s\n", newnewcont)
+	// 		}
+	// 	}
+	// }
 
 	newvalue, err := v.Keep(request)
 	if err != nil {
