@@ -8,91 +8,6 @@ import (
 	"unicode"
 )
 
-// Object represents JSON object.
-//
-// Object cannot be used from concurrent goroutines.
-// Use per-goroutine parsers or ParserPool instead.
-type Object struct {
-	kvs           []kv
-	keysUnescaped bool
-}
-
-func (o *Object) reset() {
-	o.kvs = o.kvs[:0]
-	o.keysUnescaped = false
-}
-
-// String returns string representation for the o.
-//
-// This function is for debugging purposes only. It isn't optimized for speed.
-func (o *Object) String() string {
-	o.unescapeKeys()
-
-	// Use bytes.Buffer instead of strings.Builder,
-	// so it works on go 1.9 and below.
-	var bb bytes.Buffer
-	bb.WriteString("{")
-	for i, kv := range o.kvs {
-		fmt.Fprintf(&bb, "%q:%s", kv.k, kv.v)
-		if i != len(o.kvs)-1 {
-			bb.WriteString(",")
-		}
-	}
-	bb.WriteString("}")
-	return bb.String()
-}
-
-func (o *Object) getKV() *kv {
-	if cap(o.kvs) > len(o.kvs) {
-		o.kvs = o.kvs[:len(o.kvs)+1]
-	} else {
-		o.kvs = append(o.kvs, kv{})
-	}
-	return &o.kvs[len(o.kvs)-1]
-}
-
-func (o *Object) unescapeKeys() {
-	if o.keysUnescaped {
-		return
-	}
-	for i := range o.kvs {
-		kv := &o.kvs[i]
-		kv.k = unescapeStringBestEffort(kv.k)
-	}
-	o.keysUnescaped = true
-}
-
-// Get returns the value for the given key in the o.
-//
-// Returns nil if the value for the given key isn't found.
-//
-// The returned value is valid until Parse is called on the Parser returned o.
-func (o *Object) Get(key string) *Value {
-	o.unescapeKeys()
-
-	for _, kv := range o.kvs {
-		if kv.k == key {
-			return kv.v
-		}
-	}
-	return nil
-}
-
-// Visit calls f for each item in the o.
-//
-// f cannot hold key and/or v after returning.
-func (o *Object) Visit(f func(key []byte, v *Value)) {
-	if o == nil {
-		return
-	}
-
-	o.unescapeKeys()
-
-	for _, kv := range o.kvs {
-		f(s2b(kv.k), kv.v)
-	}
-}
-
 // Value represents any JSON value.
 //
 // Call Type in order to determine the actual type of the JSON value.
@@ -176,10 +91,10 @@ func (v *Value) Type() Type {
 // Exists returns true if the field exists for the given keys path.
 //
 // Array indexes may be represented as decimal numbers in keys.
-// func (v *Value) Exists(keys ...string) bool {
-// 	v = v.Get(keys...)
-// 	return v != nil
-// }
+func (v *Value) Exists(keys ...string) bool {
+	v = v.Get(keys...)
+	return v != nil
+}
 
 // Get returns value by the given keys path.
 //
@@ -210,6 +125,90 @@ func (v *Value) Get(keys ...string) *Value {
 		}
 	}
 	return v
+}
+
+// GetObject returns object value by the given keys path.
+//
+// Array indexes may be represented as decimal numbers in keys.
+//
+// nil is returned for non-existing keys path or for invalid value type.
+//
+// The returned object is valid until Parse is called on the Parser returned v.
+func (v *Value) GetObject(keys ...string) *Object {
+	v = v.Get(keys...)
+	if v == nil || v.Type() != TypeObject {
+		return nil
+	}
+	return &v.o
+}
+
+// GetArray returns array value by the given keys path.
+//
+// Array indexes may be represented as decimal numbers in keys.
+//
+// nil is returned for non-existing keys path or for invalid value type.
+//
+// The returned array is valid until Parse is called on the Parser returned v.
+func (v *Value) GetArray(keys ...string) []*Value {
+	v = v.Get(keys...)
+	if v == nil || v.Type() != TypeArray {
+		return nil
+	}
+	return v.a
+}
+
+// GetFloat64 returns float64 value by the given keys path.
+//
+// Array indexes may be represented as decimal numbers in keys.
+//
+// 0 is returned for non-existing keys path or for invalid value type.
+func (v *Value) GetFloat64(keys ...string) float64 {
+	v = v.Get(keys...)
+	if v == nil || v.Type() != TypeNumber {
+		return 0
+	}
+	return v.n
+}
+
+// GetInt returns int value by the given keys path.
+//
+// Array indexes may be represented as decimal numbers in keys.
+//
+// 0 is returned for non-existing keys path or for invalid value type.
+func (v *Value) GetInt(keys ...string) int {
+	v = v.Get(keys...)
+	if v == nil || v.Type() != TypeNumber {
+		return 0
+	}
+	return int(v.n)
+}
+
+// GetStringBytes returns string value by the given keys path.
+//
+// Array indexes may be represented as decimal numbers in keys.
+//
+// nil is returned for non-existing keys path or for invalid value type.
+//
+// The returned string is valid until Parse is called on the Parser returned v.
+func (v *Value) GetStringBytes(keys ...string) []byte {
+	v = v.Get(keys...)
+	if v == nil || v.Type() != TypeString {
+		return nil
+	}
+	return s2b(v.s)
+}
+
+// GetBool returns bool value by the given keys path.
+//
+// Array indexes may be represented as decimal numbers in keys.
+//
+// false is returned for non-existing keys path or for invalid value type.
+func (v *Value) GetBool(keys ...string) bool {
+	v = v.Get(keys...)
+	if v != nil && v.Type() == TypeTrue {
+		return true
+	}
+	return false
 }
 
 // Object returns the underlying JSON object for the v.
@@ -326,13 +325,20 @@ func (v *Value) Search(keys ...string) ([]interface{}, error) {
 
 // {description, produit:{truc,machin,}}
 
-func (v *Value) Keep(request string) (interface{}, error) {
+type KeepRequest string
+
+func NewKeepRequest(req string) (KeepRequest, error) {
 	strings.Map(func(r rune) rune {
 		if unicode.IsSpace(r) {
 			return -1
 		}
 		return r
-	}, request)
+	}, req)
+	// TODO: add lexer for Request
+	return KeepRequest(req), nil
+}
+
+func (v *Value) Keep(request KeepRequest) (interface{}, error) {
 	switch v.Type() {
 	case TypeArray:
 		pValue, err := v.Array()
@@ -356,13 +362,13 @@ func (v *Value) Keep(request string) (interface{}, error) {
 		rValues := map[string]interface{}{}
 		stays, conts := getKeys(request)
 		for _, stay := range stays {
-			rValues[stay], err = pValue.Get(stay).Keep("")
+			rValues[string(stay)], err = pValue.Get(string(stay)).Keep("")
 			if err != nil {
 				return nil, err
 			}
 		}
 		for _, cont := range conts {
-			key := strings.Split(cont, ":")[0]
+			key := strings.Split(string(cont), ":")[0]
 			val := splitBraces(cont)
 			rValues[key], err = pValue.Get(key).Keep(val[0])
 			if err != nil {
@@ -371,6 +377,7 @@ func (v *Value) Keep(request string) (interface{}, error) {
 		}
 		return rValues, nil
 	case TypeString:
+		fmt.Println(v.String())
 		return v.String(), nil
 	case TypeNumber:
 		return v.Float64()
@@ -381,78 +388,6 @@ func (v *Value) Keep(request string) (interface{}, error) {
 	default:
 		return nil, fmt.Errorf("Type not recognized")
 	}
-	return nil, nil
-}
-
-func splitBraces(line string) []string {
-	array := []string{}
-	runes := []rune(line)
-	count := 0
-	firstIndex := 0
-	for index, char := range line {
-		switch char {
-		case '{':
-			if count == 0 {
-				firstIndex = index + 1
-			}
-			count++
-		case '}':
-			count--
-			if count == 0 {
-				array = append(array, string(runes[firstIndex:index]))
-			}
-		default:
-			continue
-		}
-	}
-	return array
-}
-
-func splitComa(line string) []string {
-	array := []string{}
-	runes := []rune(line)
-	count := 0
-	firstIndex := 0
-	for index, char := range line {
-		switch char {
-		case '{':
-			count++
-		case '}':
-			count--
-		case ',':
-			if count == 0 {
-				array = append(array, string(runes[firstIndex:index]))
-				firstIndex = index + 1
-			}
-		default:
-			continue
-		}
-	}
-	if firstIndex < len(line) {
-		array = append(array, string(runes[firstIndex:len(line)]))
-	}
-	return array
-}
-
-func getKeys(cmd string) (stay []string, cont []string) {
-	strings.Map(func(r rune) rune {
-		if unicode.IsSpace(r) {
-			return -1
-		}
-		return r
-	}, cmd)
-	stay = []string{}
-	cont = []string{}
-	for _, sb := range splitBraces(cmd) {
-		for _, sc := range splitComa(sb) {
-			if strings.Contains(sc, ":") {
-				cont = append(cont, sc)
-			} else {
-				stay = append(stay, sc)
-			}
-		}
-	}
-	return stay, cont
 }
 
 var (
