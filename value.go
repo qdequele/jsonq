@@ -1,4 +1,4 @@
-package jsonQuerry
+package jsonq
 
 import (
 	"bytes"
@@ -54,7 +54,7 @@ func (v *Value) String() string {
 		bb.WriteString("]")
 		return bb.String()
 	case TypeString:
-		return fmt.Sprintf("%q", v.s)
+		return fmt.Sprintf("%s", v.s)
 	case TypeNumber:
 		if float64(int(v.n)) == v.n {
 			return fmt.Sprintf("%d", int(v.n))
@@ -329,7 +329,7 @@ type KeepRequest string
 
 func NewKeepRequest(req string) (KeepRequest, error) {
 	strings.Map(func(r rune) rune {
-		if unicode.IsSpace(r) {
+		if unicode.IsSpace(r) || r == '\n' || r == '\r' || r == '\t' {
 			return -1
 		}
 		return r
@@ -366,7 +366,6 @@ func (v *Value) Keep(request KeepRequest) (interface{}, error) {
 		rValues := map[string]interface{}{}
 		stays, conts := GetKeys(request)
 		for _, stay := range stays {
-			// fmt.Printf("key : %s", stay)
 			next := pValue.Get(string(stay))
 			if next == nil {
 				return nil, err
@@ -386,9 +385,9 @@ func (v *Value) Keep(request KeepRequest) (interface{}, error) {
 		}
 		return rValues, nil
 	case TypeString:
-		return v.String(), nil
+		return v.s, nil
 	case TypeNumber:
-		return v.Float64()
+		return v.n, nil
 	case TypeFalse:
 		return false, nil
 	case TypeTrue:

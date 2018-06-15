@@ -1,7 +1,6 @@
-package jsonQuerry
+package jsonq
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 	"testing"

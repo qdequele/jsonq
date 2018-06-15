@@ -1,4 +1,4 @@
-package jsonQuerry
+package jsonq
 
 type cache struct {
 	vs []Value

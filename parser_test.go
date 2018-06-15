@@ -1,4 +1,4 @@
-package jsonQuerry
+package jsonq
 
 import (
 	"fmt"
@@ -38,7 +38,7 @@ func testParseRawNumberError(t *testing.T, s, expectedTail string) {
 		t.Fatalf("expecting non-nil error")
 	}
 	if tail != expectedTail {
-		t.Fatalf("unexpected tail; got %q; want %q", tail, expectedTail)
+		t.Fatalf("unexpected tail; got %s; want %s", tail, expectedTail)
 	}
 }
 
@@ -50,10 +50,10 @@ func testParseRawNumberSuccess(t *testing.T, s, expectedRN, expectedTail string)
 		t.Fatalf("unexpected error: %s", err)
 	}
 	if rn != expectedRN {
-		t.Fatalf("unexpected raw number; got %q; want %q", rn, expectedRN)
+		t.Fatalf("unexpected raw number; got %s; want %s", rn, expectedRN)
 	}
 	if tail != expectedTail {
-		t.Fatalf("unexpected tail; got %q; want %q", tail, expectedTail)
+		t.Fatalf("unexpected tail; got %s; want %s", tail, expectedTail)
 	}
 }
 
@@ -84,7 +84,7 @@ func testUnescapeStringBestEffort(t *testing.T, s, expectedS string) {
 	b := append([]byte{}, s...)
 	us := unescapeStringBestEffort(b2s(b))
 	if us != expectedS {
-		t.Fatalf("unexpected unescaped string; got %q; want %q", us, expectedS)
+		t.Fatalf("unexpected unescaped string; got %s; want %s", us, expectedS)
 	}
 }
 
@@ -126,7 +126,7 @@ func testParseRawStringError(t *testing.T, s, expectedTail string) {
 		t.Fatalf("expecting non-nil error")
 	}
 	if tail != expectedTail {
-		t.Fatalf("unexpected tail; got %q; want %q", tail, expectedTail)
+		t.Fatalf("unexpected tail; got %s; want %s", tail, expectedTail)
 	}
 }
 
@@ -138,10 +138,10 @@ func testParseRawStringSuccess(t *testing.T, s, expectedRS, expectedTail string)
 		t.Fatalf("unexpected error: %s", err)
 	}
 	if rs != expectedRS {
-		t.Fatalf("unexpected raw string; got %q; want %q", rs, expectedRS)
+		t.Fatalf("unexpected raw string; got %s; want %s", rs, expectedRS)
 	}
 	if tail != expectedTail {
-		t.Fatalf("unexpected tail; got %q; want %q", tail, expectedTail)
+		t.Fatalf("unexpected tail; got %s; want %s", tail, expectedTail)
 	}
 }
 
@@ -291,11 +291,11 @@ func TestValueGetTyped(t *testing.T) {
 	}
 	sb := v.GetStringBytes("bar")
 	if string(sb) != "433" {
-		t.Fatalf("unexpected value; got %q; want %q", sb, "443")
+		t.Fatalf("unexpected value; got %s; want %s", sb, "443")
 	}
 	sb = v.GetStringBytes("foo")
 	if sb != nil {
-		t.Fatalf("unexpected value; got %q; want %q", sb, []byte(nil))
+		t.Fatalf("unexpected value; got %s; want %s", sb, []byte(nil))
 	}
 	bv := v.GetBool("baz")
 	if !bv {
@@ -333,7 +333,7 @@ func TestVisitNil(t *testing.T) {
 		t.Fatalf("obtained an object for non-existing key: %#v", o)
 	}
 	o.Visit(func(k []byte, v *Value) {
-		t.Fatalf("unexpected visit call; k=%q; v=%s", k, v)
+		t.Fatalf("unexpected visit call; k=%s; v=%s", k, v)
 	})
 }
 
@@ -365,8 +365,8 @@ func TestValueGet(t *testing.T) {
 					t.Fatalf("unexpected value type; got %d; want %d", v.Type(), TypeArray)
 				}
 				s := v.String()
-				if s != `["baz"]` {
-					t.Fatalf("unexpected array; got %q; want %q", s, `["baz"]`)
+				if s != `[baz]` {
+					t.Fatalf("unexpected array; got %s; want %s", s, `[baz]`)
 				}
 			case "x":
 				sb, err := v.StringBytes()
@@ -374,7 +374,7 @@ func TestValueGet(t *testing.T) {
 					t.Fatalf("cannot obtain string: %s", err)
 				}
 				if string(sb) != "y" {
-					t.Fatalf("unexpected string; got %q; want %q", sb, "y")
+					t.Fatalf("unexpected string; got %s; want %s", sb, "y")
 				}
 			default:
 				t.Fatalf("unknown key: %s", k)
@@ -429,7 +429,7 @@ func TestParserParse(t *testing.T) {
 		}
 		sb := v.GetStringBytes("\\\"\u1234x")
 		if string(sb) != `\fЗУ\\` {
-			t.Fatalf("unexpected string; got %q; want %q", sb, `\fЗУ\\`)
+			t.Fatalf("unexpected string; got %s; want %s", sb, `\fЗУ\\`)
 		}
 	})
 
@@ -444,7 +444,7 @@ func TestParserParse(t *testing.T) {
 			t.Fatalf("cannot obtain string: %s", err)
 		}
 		if string(sb) != "fo\\u" {
-			t.Fatalf("unexpected string; got %q; want %q", sb, "fo\\u")
+			t.Fatalf("unexpected string; got %s; want %s", sb, "fo\\u")
 		}
 
 		v, err = p.Parse(`"foo\ubarz2134"`)
@@ -456,7 +456,7 @@ func TestParserParse(t *testing.T) {
 			t.Fatalf("cannot obtain string: %s", err)
 		}
 		if string(sb) != "foo\\ubarz2134" {
-			t.Fatalf("unexpected string; got %q; want %q", sb, "foo")
+			t.Fatalf("unexpected string; got %s; want %s", sb, "foo")
 		}
 	})
 
@@ -550,7 +550,7 @@ func TestParserParse(t *testing.T) {
 		}
 		sb := v.GetStringBytes()
 		if string(sb) != `{"foo": 123}` {
-			t.Fatalf("unexpected string value; got %q; want %q", sb, `{"foo": 123}`)
+			t.Fatalf("unexpected string value; got %s; want %s", sb, `{"foo": 123}`)
 		}
 	})
 
@@ -658,7 +658,7 @@ func TestParserParse(t *testing.T) {
 		}
 		s := v.String()
 		if s != "{}" {
-			t.Fatalf("unexpected string representation of empty object: got %q; want %q", s, "{}")
+			t.Fatalf("unexpected string representation of empty object: got %s; want %s", s, "{}")
 		}
 	})
 
@@ -681,7 +681,7 @@ func TestParserParse(t *testing.T) {
 		}
 		s := v.String()
 		if s != "[]" {
-			t.Fatalf("unexpected string representation of empty array: got %q; want %q", s, "[]")
+			t.Fatalf("unexpected string representation of empty array: got %s; want %s", s, "[]")
 		}
 	})
 
@@ -696,7 +696,7 @@ func TestParserParse(t *testing.T) {
 		}
 		s := v.String()
 		if s != "null" {
-			t.Fatalf("unexpected string representation of null; got %q; want %q", s, "null")
+			t.Fatalf("unexpected string representation of null; got %s; want %s", s, "null")
 		}
 	})
 
@@ -718,7 +718,7 @@ func TestParserParse(t *testing.T) {
 		}
 		s := v.String()
 		if s != "true" {
-			t.Fatalf("unexpected string representation of true; got %q; want %q", s, "true")
+			t.Fatalf("unexpected string representation of true; got %s; want %s", s, "true")
 		}
 	})
 
@@ -740,7 +740,7 @@ func TestParserParse(t *testing.T) {
 		}
 		s := v.String()
 		if s != "false" {
-			t.Fatalf("unexpected string representation of false; got %q; want %q", s, "false")
+			t.Fatalf("unexpected string representation of false; got %s; want %s", s, "false")
 		}
 	})
 
@@ -762,7 +762,7 @@ func TestParserParse(t *testing.T) {
 		}
 		s := v.String()
 		if s != "12345" {
-			t.Fatalf("unexpected string representation of integer; got %q; want %q", s, "12345")
+			t.Fatalf("unexpected string representation of integer; got %s; want %s", s, "12345")
 		}
 	})
 
@@ -784,7 +784,7 @@ func TestParserParse(t *testing.T) {
 		}
 		s := v.String()
 		if s != "-12.345000" {
-			t.Fatalf("unexpected string representation of integer; got %q; want %q", s, "-12.345000")
+			t.Fatalf("unexpected string representation of integer; got %s; want %s", s, "-12.345000")
 		}
 	})
 
@@ -802,11 +802,11 @@ func TestParserParse(t *testing.T) {
 			t.Fatalf("cannot obtain string: %s", err)
 		}
 		if string(sb) != "foo bar" {
-			t.Fatalf("unexpected value obtained for string; got %q; want %q", sb, "foo bar")
+			t.Fatalf("unexpected value obtained for string; got %s; want %s", sb, "foo bar")
 		}
 		ss := v.String()
-		if ss != `"foo bar"` {
-			t.Fatalf("unexpected string representation of string; got %q; want %q", ss, `"foo bar"`)
+		if ss != `foo bar` {
+			t.Fatalf("unexpected string representation of string; got %s; want %s", ss, `foo bar`)
 		}
 	})
 
@@ -824,11 +824,11 @@ func TestParserParse(t *testing.T) {
 			t.Fatalf("cannot obtain string: %s", err)
 		}
 		if string(sb) != "\n\t\\foo\"bar\u3423x/\b\f\r\\" {
-			t.Fatalf("unexpected value obtained for string; got %q; want %q", sb, "\n\t\\foo\"bar\u3423x/\b\f\r\\")
+			t.Fatalf("unexpected value obtained for string; got %s; want %s", sb, "\n\t\\foo\"bar\u3423x/\b\f\r\\")
 		}
 		ss := v.String()
-		if ss != `"\n\t\\foo\"bar㐣x/\b\f\r\\"` {
-			t.Fatalf("unexpected string representation of string; got %q; want %q", ss, `"\n\t\\foo\"bar㐣x/\b\f\r\\"`)
+		if ss != "\n\t\\foo\"bar㐣x/\b\f\r\\" {
+			t.Fatalf("unexpected string representation of string; got %s; want %s", ss, `\n\t\\foo\"bar㐣x/\b\f\r\\`)
 		}
 	})
 
@@ -856,8 +856,8 @@ func TestParserParse(t *testing.T) {
 		}
 
 		s := v.String()
-		if s != `{"foo":"bar"}` {
-			t.Fatalf("unexpected string representation for object; got %q; want %q", s, `{"foo":"bar"}`)
+		if s != `{"foo":bar}` {
+			t.Fatalf("unexpected string representation for object; got %s; want %s", s, `{"foo":bar}`)
 		}
 	})
 
@@ -893,7 +893,7 @@ func TestParserParse(t *testing.T) {
 
 		s := v.String()
 		if s != `{"foo":[1,2,3],"bar":{},"baz":123.456000}` {
-			t.Fatalf("unexpected string representation for object; got %q; want %q", s, `{"foo":[1,2,3],"bar":{},"baz":123.456000}`)
+			t.Fatalf("unexpected string representation for object; got %s; want %s", s, `{"foo":[1,2,3],"bar":{},"baz":123.456000}`)
 		}
 	})
 
@@ -919,7 +919,7 @@ func TestParserParse(t *testing.T) {
 
 		s := v.String()
 		if s != `[{"bar":[[],[[]]]}]` {
-			t.Fatalf("unexpected string representation for array; got %q; want %q", s, `[{"bar":[[],[[]]]}]`)
+			t.Fatalf("unexpected string representation for array; got %s; want %s", s, `[{"bar":[[],[[]]]}]`)
 		}
 	})
 
@@ -953,8 +953,8 @@ func TestParserParse(t *testing.T) {
 		}
 
 		s := v.String()
-		if s != `[1,"foo",{"bar":[],"baz":""},["x","y"]]` {
-			t.Fatalf("unexpected string representation for array; got %q; want %q", s, `[1,"foo",{"bar":[],"baz":""},["x","y"]]`)
+		if s != `[1,foo,{"bar":[],"baz":},[x,y]]` {
+			t.Fatalf("unexpected string representation for array; got %s; want %s", s, `[1,"foo",{"bar":[],"baz":""},["x","y"]]`)
 		}
 	})
 
@@ -969,8 +969,8 @@ func TestParserParse(t *testing.T) {
 		}
 
 		ss := v.String()
-		if ss != s {
-			t.Fatalf("unexpected string representation for object; got %q; want %q", ss, s)
+		if ss != `{"foo":[-1.345678,[[[[[]]]],{}],bar],"baz":{"bbb":123}}` {
+			t.Fatalf("unexpected string representation for object; got %s; want %s", ss, s)
 		}
 	})
 
@@ -1050,13 +1050,13 @@ func TestParseBigObject(t *testing.T) {
 		expectedV := fmt.Sprintf("value_%d", i)
 		sb := v.GetStringBytes(k)
 		if string(sb) != expectedV {
-			t.Fatalf("unexpected value obtained; got %q; want %q", sb, expectedV)
+			t.Fatalf("unexpected value obtained; got %s; want %s", sb, expectedV)
 		}
 	}
 
 	// verify non-existing key returns nil
 	sb := v.GetStringBytes("non-existing-key")
 	if sb != nil {
-		t.Fatalf("unexpected non-nil value for non-existing-key: %q", sb)
+		t.Fatalf("unexpected non-nil value for non-existing-key: %s", sb)
 	}
 }

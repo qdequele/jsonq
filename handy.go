@@ -1,4 +1,4 @@
-package jsonQuerry
+package jsonq
 
 var handyPool ParserPool
 
