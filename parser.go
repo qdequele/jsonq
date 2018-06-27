@@ -94,8 +94,6 @@ func parseValue(s string, c *cache) (*Value, string, error) {
 		return nil, s, fmt.Errorf("cannot parse empty string")
 	}
 
-	// fmt.Printf("- %s\n", s)
-
 	var v *Value
 	var err error
 

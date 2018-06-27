@@ -104,7 +104,7 @@ func KeepSmallSimple() {
 
 	_, err := smallFixtureValue.Keep(*requestSmallSimple)
 	if err != nil {
-		log.Fatalf("cannot parse json: %s", err)
+		log.Fatalf("cannot keep json: %s", err)
 	}
 }
 
@@ -112,14 +112,14 @@ func KeepSmallMedium() {
 
 	_, err := smallFixtureValue.Keep(*requestSmallMedium)
 	if err != nil {
-		log.Fatalf("cannot parse json: %s", err)
+		log.Fatalf("cannot keep json: %s", err)
 	}
 }
 
 func KeepSmallHard() {
 	_, err := smallFixtureValue.Keep(*requestSmallHard)
 	if err != nil {
-		log.Fatalf("cannot parse json: %s", err)
+		log.Fatalf("cannot keep json: %s", err)
 	}
 }
 
@@ -130,21 +130,21 @@ func KeepSmallHard() {
 func KeepMediumSimple() {
 	_, err := mediumFixtureValue.Keep(*requestMediumSimple)
 	if err != nil {
-		log.Fatalf("cannot parse json: %s", err)
+		log.Fatalf("cannot keep json: %s", err)
 	}
 }
 
 func KeepMediumMedium() {
 	_, err := mediumFixtureValue.Keep(*requestMediumMedium)
 	if err != nil {
-		log.Fatalf("cannot parse json: %s", err)
+		log.Fatalf("cannot keep json: %s", err)
 	}
 }
 
 func KeepMediumHard() {
 	_, err := mediumFixtureValue.Keep(*requestMediumHard)
 	if err != nil {
-		log.Fatalf("cannot parse json: %s", err)
+		log.Fatalf("cannot keep json: %s", err)
 	}
 }
 
@@ -155,20 +155,20 @@ func KeepMediumHard() {
 func KeepLargeSimple() {
 	_, err := largeFixtureValue.Keep(*requestLargeSimple)
 	if err != nil {
-		log.Fatalf("cannot parse json: %s", err)
+		log.Fatalf("cannot keep json: %s", err)
 	}
 }
 
 func KeepLargeMedium() {
 	_, err := largeFixtureValue.Keep(*requestLargeMedium)
 	if err != nil {
-		log.Fatalf("cannot parse json: %s", err)
+		log.Fatalf("cannot keep json: %s", err)
 	}
 }
 
 func KeepLargeHard() {
 	_, err := largeFixtureValue.Keep(*requestLargeHard)
 	if err != nil {
-		log.Fatalf("cannot parse json: %s", err)
+		log.Fatalf("cannot keep json: %s", err)
 	}
 }
