@@ -1,34 +1,54 @@
 package main
 
 import (
-	"encoding/json"
+	"flag"
 	"fmt"
 	"log"
+	"os"
+	"reflect"
+	"runtime/pprof"
 
 	"github.com/qdequele/jsonq"
 )
 
+var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
+
 func main() {
 
-	querry := `{st,sid,tt,users:{name}}`
+	flag.Parse()
+	if *cpuprofile != "" {
+		f, err := os.Create(*cpuprofile)
+		if err != nil {
+			log.Fatal(err)
+		}
+		pprof.StartCPUProfile(f)
+		defer pprof.StopCPUProfile()
+	}
+
+	querry := `{users{username}}`
 
 	var p jsonq.Parser
-	v, err := p.Parse(smallFixture)
+	v, err := p.Parse(largeFixture)
 	if err != nil {
 		log.Fatalf("cannot parse json: %s", err)
 	}
 
-	request, _ := jsonq.NewKeepRequest(querry)
+	request := jsonq.MustParseCMD(querry)
 
-	newvalue, err := v.Keep(request)
+	newvalue, err := v.Keep(*request)
 	if err != nil {
-		log.Fatalf("cannot parse json: %s", err)
+		fmt.Println(err)
 	}
-	json, err := json.Marshal(newvalue)
-	if err != nil {
-		log.Fatalf("cannot parse json: %s", err)
+	fmt.Println(newvalue)
+}
+
+func getAllKeys(data interface{}) {
+	fmt.Println(reflect.TypeOf(data))
+	if m, ok := data.(map[string]interface{}); ok == true {
+		for key, val := range m {
+			fmt.Printf("%q - %q\n", key, val)
+		}
 	}
-	fmt.Println(string(json))
 }
 
 const smallFixture = `{

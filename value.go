@@ -22,12 +22,43 @@ type Value struct {
 	t Type
 }
 
+var (
+	valueTrue   = &Value{t: TypeTrue}
+	valueFalse  = &Value{t: TypeFalse}
+	valueNull   = &Value{t: TypeNull}
+	emptyObject = &Value{t: TypeObject}
+	emptyArray  = &Value{t: TypeArray}
+)
+
 func (v *Value) reset() {
 	v.o.reset()
 	v.a = v.a[:0]
 	v.s = ""
 	v.n = 0
 	v.t = TypeNull
+}
+
+func (v *Value) check(filter Filter) bool {
+	switch v.Type() {
+	case TypeString:
+		// fmt.Println("TypeString")
+		return filter.check(v.s)
+	case TypeNumber:
+		// fmt.Println("TypeNumber")
+		return filter.check(v.n)
+	case TypeTrue:
+		// fmt.Println("TypeTrue")
+		return filter.check(true)
+	case TypeFalse:
+		// fmt.Println("TypeFalse")
+		return filter.check(false)
+	case TypeNull:
+		// fmt.Println("TypeNull")
+		return filter.check(nil)
+	default:
+		// fmt.Println("default")
+		return false
+	}
 }
 
 // String returns string representation of the v.
@@ -54,7 +85,7 @@ func (v *Value) String() string {
 		bb.WriteString("]")
 		return bb.String()
 	case TypeString:
-		return fmt.Sprintf("%s", v.s)
+		return fmt.Sprintf("%q", v.s)
 	case TypeNumber:
 		if float64(int(v.n)) == v.n {
 			return fmt.Sprintf("%d", int(v.n))
@@ -338,69 +369,84 @@ func NewKeepRequest(req string) (KeepRequest, error) {
 	return KeepRequest(req), nil
 }
 
-func (v *Value) Keep(request KeepRequest) (interface{}, error) {
-	// fmt.Println(request)
-	// fmt.Println(v.String())
+func (v *Value) Keep(request Level) (string, error) {
+	w := bytes.Buffer{}
 	switch v.Type() {
 	case TypeArray:
-		// fmt.Println("is Array")
 		pValue, err := v.Array()
 		if err != nil {
-			return nil, err
+			return "", err
 		}
-		rValues := []interface{}{}
-		for _, uValue := range pValue {
+		w.WriteRune('[')
+		for index, uValue := range pValue {
 			nValue, err := uValue.Keep(request)
 			if err != nil {
-				return nil, err
+				return "", err
 			}
-			rValues = append(rValues, nValue)
+			if len(nValue) > 0 {
+				w.WriteString(nValue)
+				if index < len(pValue)-1 {
+					w.WriteRune(',')
+				}
+			}
 		}
-		return rValues, nil
+		w.WriteRune(']')
+		return w.String(), nil
 	case TypeObject:
-		// fmt.Println("is Object")
 		pValue, err := v.Object()
 		if err != nil {
-			return nil, err
+			return "", err
 		}
-		rValues := map[string]interface{}{}
-		stays, conts := GetKeys(request)
-		for _, stay := range stays {
-			next := pValue.Get(string(stay))
-			if next == nil {
-				return nil, err
+		for _, filter := range request.filters {
+			if pValue.Get(filter.key).check(*filter) == false {
+				return "", nil
 			}
-			rValues[string(stay)], err = next.Keep("")
+		}
+		// rValues := map[string]interface{}{}
+		w.WriteRune('{')
+		i := 0
+		for _, retrieve := range request.retrieve {
+			i++
+			w.WriteRune('"')
+			w.WriteString(retrieve)
+			w.WriteRune('"')
+			w.WriteRune(':')
+			w.WriteString(pValue.Get(retrieve).String())
+			if i < len(request.next)+len(request.retrieve) {
+				w.WriteRune(',')
+			}
+		}
+		for name, next := range request.next {
+			i++
+			nValue, err := pValue.Get(name).Keep(*next)
 			if err != nil {
-				return nil, err
+				return "", err
+			}
+			w.WriteRune('"')
+			w.WriteString(name)
+			w.WriteRune('"')
+			w.WriteRune(':')
+			w.WriteString(nValue)
+			if i < len(request.next)+len(request.retrieve) {
+				w.WriteRune(',')
 			}
 		}
-		for _, cont := range conts {
-			key := strings.Split(string(cont), ":")[0]
-			val := splitBraces(cont)
-			rValues[key], err = pValue.Get(key).Keep(val[0])
-			if err != nil {
-				return nil, err
-			}
-		}
-		return rValues, nil
+		w.WriteRune('}')
+		return w.String(), nil
 	case TypeString:
-		return v.s, nil
+		return fmt.Sprintf("%q", v.s), nil
 	case TypeNumber:
-		return v.n, nil
+		if float64(int(v.n)) == v.n {
+			return fmt.Sprintf("%d", int(v.n)), nil
+		}
+		return fmt.Sprintf("%f", v.n), nil
 	case TypeFalse:
-		return false, nil
+		return "false", nil
 	case TypeTrue:
-		return true, nil
+		return "true", nil
+	case TypeNull:
+		return "null", nil
 	default:
-		return nil, fmt.Errorf("Type not recognized")
+		return "", fmt.Errorf("Type not recognized")
 	}
 }
-
-var (
-	valueTrue   = &Value{t: TypeTrue}
-	valueFalse  = &Value{t: TypeFalse}
-	valueNull   = &Value{t: TypeNull}
-	emptyObject = &Value{t: TypeObject}
-	emptyArray  = &Value{t: TypeArray}
-)
