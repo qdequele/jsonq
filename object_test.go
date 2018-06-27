@@ -70,6 +70,18 @@ func TestKeepRequest(t *testing.T) {
 	})
 }
 
+func TestCheckRequest(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		TestCheckSmallRequestSuccess(t)
+		TestCheckMediumRequestSuccess(t)
+		TestCheckLargeRequestSuccess(t)
+	})
+
+	t.Run("error", func(t *testing.T) {
+		// testParseRawNumberError(t, "xyz", "xyz")
+	})
+}
+
 func TestKeepSmallRequestSuccess(t *testing.T) {
 	t.Helper()
 
@@ -93,6 +105,31 @@ func TestKeepLargeRequestSuccess(t *testing.T) {
 	KeepLargeSimple()
 	KeepLargeMedium()
 	KeepLargeHard()
+
+}
+func TestCheckSmallRequestSuccess(t *testing.T) {
+	t.Helper()
+
+	CheckSmallSimple()
+	CheckSmallMedium()
+	CheckSmallHard()
+
+}
+
+func TestCheckMediumRequestSuccess(t *testing.T) {
+	t.Helper()
+
+	CheckMediumSimple()
+	CheckMediumMedium()
+	CheckMediumHard()
+
+}
+func TestCheckLargeRequestSuccess(t *testing.T) {
+	t.Helper()
+
+	CheckLargeSimple()
+	CheckLargeMedium()
+	CheckLargeHard()
 
 }
 
@@ -170,5 +207,80 @@ func KeepLargeHard() {
 	_, err := largeFixtureValue.Keep(*requestLargeHard)
 	if err != nil {
 		log.Fatalf("cannot keep json: %s", err)
+	}
+}
+
+// CHECK
+
+func CheckSmallSimple() {
+
+	err := smallFixtureValue.Check(*requestSmallSimple)
+	if err != nil {
+		log.Fatalf("cannot Check json: %s", err)
+	}
+}
+
+func CheckSmallMedium() {
+
+	err := smallFixtureValue.Check(*requestSmallMedium)
+	if err != nil {
+		log.Fatalf("cannot Check json: %s", err)
+	}
+}
+
+func CheckSmallHard() {
+	err := smallFixtureValue.Check(*requestSmallHard)
+	if err != nil {
+		log.Fatalf("cannot Check json: %s", err)
+	}
+}
+
+//
+// MEDIUM DATASET
+//
+
+func CheckMediumSimple() {
+	err := mediumFixtureValue.Check(*requestMediumSimple)
+	if err != nil {
+		log.Fatalf("cannot Check json: %s", err)
+	}
+}
+
+func CheckMediumMedium() {
+	err := mediumFixtureValue.Check(*requestMediumMedium)
+	if err != nil {
+		log.Fatalf("cannot Check json: %s", err)
+	}
+}
+
+func CheckMediumHard() {
+	err := mediumFixtureValue.Check(*requestMediumHard)
+	if err != nil {
+		log.Fatalf("cannot Check json: %s", err)
+	}
+}
+
+//
+// LARGE DATASET
+//
+
+func CheckLargeSimple() {
+	err := largeFixtureValue.Check(*requestLargeSimple)
+	if err != nil {
+		log.Fatalf("cannot Check json: %s", err)
+	}
+}
+
+func CheckLargeMedium() {
+	err := largeFixtureValue.Check(*requestLargeMedium)
+	if err != nil {
+		log.Fatalf("cannot Check json: %s", err)
+	}
+}
+
+func CheckLargeHard() {
+	err := largeFixtureValue.Check(*requestLargeHard)
+	if err != nil {
+		log.Fatalf("cannot Check json: %s", err)
 	}
 }

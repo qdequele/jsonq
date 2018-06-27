@@ -25,7 +25,7 @@ func main() {
 		defer pprof.StopCPUProfile()
 	}
 
-	querry := `{users{username},topics{topics(visible == true){posters{description}}}}`
+	querry := `{users(username == "system"){username},topics{topics(visible == true){posters{description}}}}`
 
 	var p jsonq.Parser
 	v, err := p.Parse(largeFixture)
@@ -35,11 +35,13 @@ func main() {
 
 	request := jsonq.MustParseCMD(querry)
 
-	newvalue, err := v.Keep(*request)
+	err = v.Check(*request)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("NOK")
+	} else {
+		fmt.Println("OK")
 	}
-	fmt.Println(newvalue)
+	// fmt.Println(newvalue)
 }
 
 func getAllKeys(data interface{}) {

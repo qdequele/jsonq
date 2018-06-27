@@ -369,6 +369,44 @@ func NewKeepRequest(req string) (KeepRequest, error) {
 	return KeepRequest(req), nil
 }
 
+func (v *Value) Check(request Level) error {
+	switch v.Type() {
+	case TypeArray:
+		pValue, err := v.Array()
+		if err != nil {
+			return err
+		}
+		for _, uValue := range pValue {
+			err := uValue.Check(request)
+			if err == nil {
+				return nil
+			}
+		}
+		return fmt.Errorf("No element found")
+	case TypeObject:
+		pValue, err := v.Object()
+		if err != nil {
+			return err
+		}
+		for _, filter := range request.filters {
+			if pValue.Get(filter.key).check(*filter) == false {
+				return fmt.Errorf("")
+			}
+		}
+		for name, next := range request.next {
+			err := pValue.Get(name).Check(*next)
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	case TypeString, TypeNumber, TypeFalse, TypeTrue, TypeNull:
+		return nil
+	default:
+		return fmt.Errorf("Type not recognized")
+	}
+}
+
 func (v *Value) Keep(request Level) (string, error) {
 	w := bytes.Buffer{}
 	switch v.Type() {
