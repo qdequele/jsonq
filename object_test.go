@@ -55,7 +55,7 @@ func init() {
 	requestMediumHard = MustParseCMD(`{person{name{fullName},email,geo{city,state},bio},users(id > 20){username}}`)
 	requestLargeSimple = MustParseCMD(`{users{username}}`)
 	requestLargeMedium = MustParseCMD(`{topics{topics{title,fancy_title}}}`)
-	requestLargeHard = MustParseCMD(`{users{username},topics{topics{posters{description}}}}`)
+	requestLargeHard = MustParseCMD(`{users{username},topics{topics(visible == true){posters{description}}}}`)
 }
 
 func TestKeepRequest(t *testing.T) {

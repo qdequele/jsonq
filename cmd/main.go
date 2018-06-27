@@ -25,7 +25,7 @@ func main() {
 		defer pprof.StopCPUProfile()
 	}
 
-	querry := `{users{username}}`
+	querry := `{users{username},topics{topics(visible == true){posters{description}}}}`
 
 	var p jsonq.Parser
 	v, err := p.Parse(largeFixture)

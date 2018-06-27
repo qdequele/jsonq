@@ -74,6 +74,11 @@ func findOperation(line string) Operation {
 
 func checkEq(base, compared interface{}) bool {
 	switch v := base.(type) {
+	case bool:
+		if comp, ok := compared.(bool); ok == true {
+			return comp == v
+		}
+		return false
 	case int64:
 		if comp, ok := compared.(int64); ok == true && comp == v {
 			return true
@@ -106,6 +111,11 @@ func checkEq(base, compared interface{}) bool {
 
 func checkPartialEq(base, compared interface{}) bool {
 	switch v := base.(type) {
+	case bool:
+		if comp, ok := compared.(bool); ok == true {
+			return comp == v
+		}
+		return false
 	case int64:
 		if comp, ok := compared.(int64); ok == true && comp == v {
 			return true
@@ -137,6 +147,11 @@ func checkPartialEq(base, compared interface{}) bool {
 
 func checkDiff(base, compared interface{}) bool {
 	switch v := base.(type) {
+	case bool:
+		if comp, ok := compared.(bool); ok == true {
+			return comp != v
+		}
+		return false
 	case int64:
 		if comp, ok := compared.(int64); ok == true && comp != v {
 			return true
@@ -169,6 +184,11 @@ func checkDiff(base, compared interface{}) bool {
 
 func checkPartialDiff(base, compared interface{}) bool {
 	switch v := base.(type) {
+	case bool:
+		if comp, ok := compared.(bool); ok == true {
+			return comp != v
+		}
+		return false
 	case int64:
 		if comp, ok := compared.(int64); ok == true && comp != v {
 			return true
@@ -200,7 +220,7 @@ func checkPartialDiff(base, compared interface{}) bool {
 
 func checkSup(base, compared interface{}) bool {
 	switch v := base.(type) {
-	case nil:
+	case bool, nil:
 		return false
 	case int64:
 		if comp, ok := compared.(int64); ok == true && comp > v {
@@ -236,7 +256,7 @@ func checkSup(base, compared interface{}) bool {
 
 func checkSupEq(base, compared interface{}) bool {
 	switch v := base.(type) {
-	case nil:
+	case bool, nil:
 		return false
 	case int64:
 		if comp, ok := compared.(int64); ok == true && comp >= v {
@@ -270,7 +290,7 @@ func checkSupEq(base, compared interface{}) bool {
 
 func checkInf(base, compared interface{}) bool {
 	switch v := base.(type) {
-	case nil:
+	case bool, nil:
 		return false
 	case int64:
 		if comp, ok := compared.(int64); ok == true && comp < v {
@@ -305,7 +325,7 @@ func checkInf(base, compared interface{}) bool {
 
 func checkInfEq(base, compared interface{}) bool {
 	switch v := base.(type) {
-	case nil:
+	case bool, nil:
 		return false
 	case int64:
 		if comp, ok := compared.(int64); ok == true && comp <= v {
