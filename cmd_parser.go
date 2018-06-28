@@ -2,7 +2,6 @@ package jsonq
 
 import (
 	"fmt"
-	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
@@ -17,12 +16,16 @@ const (
 	supEq       Operation = ">="
 	inf         Operation = "<"
 	infEq       Operation = "<="
+	contain     Operation = ":"
+	notContain  Operation = "!:"
+	like        Operation = "::"
+	notLike     Operation = "!::"
 )
 
 var cmdRegex = regexp.MustCompile(`^([a-z_]+)?(?:\(([^{\}\)\(]*)\))?{(.*)}$`)
-var filterRegex = regexp.MustCompile(`(?:([a-z_]+)\s*([><!=]+)\s*((?:[^&\(\)\{}\s\")]+|(?:\"[^&\(\)\{}]*\")))\s*)+`)
-var comaRegex = regexp.MustCompile(`((?:[^,]+\(.+?\){.+?})+?|(?:[^,]+{.+?})+?|(?:[^,]+))`)
+var filterRegex = regexp.MustCompile(`(?:([a-z_]+)\s*([><!:=]+)\s*((?:[^&\(\)\{}\s\")]+|(?:\"[^&\(\)\{}]*\")))\s*)+`)
 
+// Operation is common possible operations in filters (==, ===, !=, !==, >, <, >=, <=, :).
 type Operation string
 
 func (o Operation) check(base, compared interface{}) bool {
@@ -43,6 +46,14 @@ func (o Operation) check(base, compared interface{}) bool {
 		return checkInf(base, compared)
 	case infEq:
 		return checkInfEq(base, compared)
+	case contain:
+		return checkContain(base, compared)
+	case notContain:
+		return checkNotContain(base, compared)
+	case like:
+		return checkLike(base, compared)
+	case notLike:
+		return checkNotLike(base, compared)
 	default:
 		return false
 	}
@@ -67,6 +78,14 @@ func findOperation(line string) Operation {
 		return inf
 	case "<=":
 		return infEq
+	case ":":
+		return contain
+	case "!:":
+		return notContain
+	case "::":
+		return like
+	case "!::":
+		return notLike
 	default:
 		return "error"
 	}
@@ -237,7 +256,6 @@ func checkSup(base, compared interface{}) bool {
 		}
 		return false
 	case string:
-		fmt.Printf("%q -%q\n", reflect.TypeOf(base), reflect.TypeOf(compared))
 		if comp, ok := compared.(string); ok == true && comp > v {
 			return true
 		}
@@ -357,6 +375,65 @@ func checkInfEq(base, compared interface{}) bool {
 	return false
 }
 
+// In this case we check if the compare string is contained int the base string
+func checkContain(base, compared interface{}) bool {
+	if b, ok := base.(string); ok == true {
+		if c, ok := compared.(string); ok == true {
+			b = strings.ToLower(b)
+			b = strings.TrimLeft(b, `"`)
+			b = strings.TrimRight(b, `"`)
+			c = strings.ToLower(c)
+			return strings.Contains(b, c)
+		}
+	}
+	return false
+}
+
+func checkNotContain(base, compared interface{}) bool {
+	if b, ok := base.(string); ok == true {
+		if c, ok := compared.(string); ok == true {
+			b = strings.ToLower(b)
+			b = strings.TrimLeft(b, `"`)
+			b = strings.TrimRight(b, `"`)
+			c = strings.ToLower(c)
+			return !strings.Contains(b, c)
+		}
+	}
+	return false
+}
+
+// In this function base was the json value, compared the string used for the regex. Both should be strings
+func checkLike(base, compared interface{}) bool {
+	if b, ok := base.(string); ok == true {
+		if c, ok := compared.(string); ok == true {
+			b = strings.ToLower(b)
+			b = strings.TrimLeft(b, `"`)
+			b = strings.TrimRight(b, `"`)
+			c = strings.ToLower(c)
+			if ok, err := regexp.MatchString(b, c); err == nil {
+				return ok
+			}
+		}
+	}
+	return false
+}
+
+func checkNotLike(base, compared interface{}) bool {
+	if b, ok := base.(string); ok == true {
+		if c, ok := compared.(string); ok == true {
+			b = strings.ToLower(b)
+			b = strings.TrimLeft(b, `"`)
+			b = strings.TrimRight(b, `"`)
+			c = strings.ToLower(c)
+			if ok, err := regexp.MatchString(b, c); err == nil {
+				return !ok
+			}
+		}
+	}
+	return false
+}
+
+//Filter is the type used for describe a operation of filtering
 type Filter struct {
 	key string
 	op  Operation
@@ -401,6 +478,10 @@ func newFilter(cmd string) []*Filter {
 	return filters
 }
 
+// Query is the exposed struct type for functions Keep, Check and Retrieve
+type Query Level
+
+// Level is a description of a level in a graphql like request
 type Level struct {
 	filters  []*Filter
 	next     map[string]*Level
@@ -432,11 +513,12 @@ func (l Level) print(level int) {
 	}
 }
 
+// Print will recursively show the content of levels.
 func (l Level) Print() {
 	l.print(0)
 }
 
-func parseCMD(cmd string) (level *Level, levelName string, err error) {
+func parseQuery(cmd string) (level *Level, levelName string, err error) {
 	matches := cmdRegex.FindStringSubmatch(cmd)
 	lvl := newLevel()
 	if len(matches[2]) > 0 {
@@ -449,7 +531,7 @@ func parseCMD(cmd string) (level *Level, levelName string, err error) {
 	if len(matches[3]) > 0 {
 		for _, attr := range splitComa(matches[3]) {
 			if strings.ContainsAny(attr, "(){}") {
-				newLevel, levelName, _ := parseCMD(attr)
+				newLevel, levelName, _ := parseQuery(attr)
 				lvl.next[levelName] = newLevel
 			} else {
 				lvl.retrieve = append(lvl.retrieve, attr)
@@ -459,13 +541,15 @@ func parseCMD(cmd string) (level *Level, levelName string, err error) {
 	return &lvl, matches[1], nil
 }
 
-func ParseCMD(cmd string) (parser *Level, err error) {
-	parser, _, err = parseCMD(cmd)
+// ParseQuery create a easy traversable structure from a graphql like query.
+func ParseQuery(cmd string) (parser *Level, err error) {
+	parser, _, err = parseQuery(cmd)
 	return parser, err
 }
 
-func MustParseCMD(cmd string) (parser *Level) {
-	parser, _, err := parseCMD(cmd)
+// MustParseQuery is parseQuery without error return. You should be sure of your query syntax !
+func MustParseQuery(cmd string) (parser *Level) {
+	parser, _, err := parseQuery(cmd)
 	if err != nil {
 		panic(err)
 	}

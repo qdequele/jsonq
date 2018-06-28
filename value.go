@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"strconv"
-	"strings"
-	"unicode"
 )
 
 // Value represents any JSON value.
@@ -354,21 +352,6 @@ func (v *Value) Search(keys ...string) ([]interface{}, error) {
 	return rValues, nil
 }
 
-// {description, produit:{truc,machin,}}
-
-type KeepRequest string
-
-func NewKeepRequest(req string) (KeepRequest, error) {
-	strings.Map(func(r rune) rune {
-		if unicode.IsSpace(r) || r == '\n' || r == '\r' || r == '\t' {
-			return -1
-		}
-		return r
-	}, req)
-	// TODO: add lexer for Request
-	return KeepRequest(req), nil
-}
-
 func (v *Value) Check(request Level) error {
 	switch v.Type() {
 	case TypeArray:
@@ -440,7 +423,82 @@ func (v *Value) Keep(request Level) (string, error) {
 				return "", nil
 			}
 		}
-		// rValues := map[string]interface{}{}
+		w.WriteRune('{')
+		i := 0
+		for _, retrieve := range request.retrieve {
+			i++
+			w.WriteRune('"')
+			w.WriteString(retrieve)
+			w.WriteRune('"')
+			w.WriteRune(':')
+			w.WriteString(pValue.Get(retrieve).String())
+			if i < len(request.next)+len(request.retrieve) {
+				w.WriteRune(',')
+			}
+		}
+		for name, next := range request.next {
+			i++
+			nValue, err := pValue.Get(name).Keep(*next)
+			if err != nil {
+				return "", err
+			}
+			w.WriteRune('"')
+			w.WriteString(name)
+			w.WriteRune('"')
+			w.WriteRune(':')
+			w.WriteString(nValue)
+			if i < len(request.next)+len(request.retrieve) {
+				w.WriteRune(',')
+			}
+		}
+		w.WriteRune('}')
+		return w.String(), nil
+	case TypeString:
+		return fmt.Sprintf("%q", v.s), nil
+	case TypeNumber:
+		if float64(int(v.n)) == v.n {
+			return fmt.Sprintf("%d", int(v.n)), nil
+		}
+		return fmt.Sprintf("%f", v.n), nil
+	case TypeFalse:
+		return "false", nil
+	case TypeTrue:
+		return "true", nil
+	case TypeNull:
+		return "null", nil
+	default:
+		return "", fmt.Errorf("Type not recognized")
+	}
+}
+
+func (v *Value) Retrieve(request Level) (string, error) {
+	w := bytes.Buffer{}
+	switch v.Type() {
+	case TypeArray:
+		pValue, err := v.Array()
+		if err != nil {
+			return "", err
+		}
+		w.WriteRune('[')
+		for index, uValue := range pValue {
+			nValue, err := uValue.Keep(request)
+			if err != nil {
+				return "", err
+			}
+			if len(nValue) > 0 {
+				w.WriteString(nValue)
+				if index < len(pValue)-1 {
+					w.WriteRune(',')
+				}
+			}
+		}
+		w.WriteRune(']')
+		return w.String(), nil
+	case TypeObject:
+		pValue, err := v.Object()
+		if err != nil {
+			return "", err
+		}
 		w.WriteRune('{')
 		i := 0
 		for _, retrieve := range request.retrieve {

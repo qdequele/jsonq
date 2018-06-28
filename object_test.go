@@ -3,8 +3,6 @@ package jsonq
 import (
 	"log"
 	"testing"
-
-	jsoniter "github.com/json-iterator/go"
 )
 
 var (
@@ -23,8 +21,7 @@ var (
 	requestLargeHard    *Level
 )
 
-var json = jsoniter.ConfigCompatibleWithStandardLibrary
-
+// Needed for bench on Keep and Check. We assume that the parsing was previously done.
 func init() {
 	var p1 Parser
 	v1, err := p1.Parse(smallFixture)
@@ -47,16 +44,64 @@ func init() {
 	}
 	largeFixtureValue = v3
 
-	requestSmallSimple = MustParseCMD(`(st>=1){st}`)
-	requestSmallMedium = MustParseCMD(`(gr == 0){st,sid,tt}`)
-	requestSmallHard = MustParseCMD(`{st,sid,tt,users(name == "Leonid"){name}}`)
-	requestMediumSimple = MustParseCMD(`{person{name{fullName}}}`)
-	requestMediumMedium = MustParseCMD(`{person{name{fullName},email,geo{city,state},bio}}`)
-	requestMediumHard = MustParseCMD(`{person{name{fullName},email,geo{city,state},bio},users(id > 20){username}}`)
-	requestLargeSimple = MustParseCMD(`{users{username}}`)
-	requestLargeMedium = MustParseCMD(`{topics{topics{title,fancy_title}}}`)
-	requestLargeHard = MustParseCMD(`{users{username},topics{topics(visible == true){posters{description}}}}`)
+	requestSmallSimple = MustparseQuery(`(st>=1){st}`)
+	requestSmallMedium = MustparseQuery(`(gr == 0){st,sid,tt}`)
+	requestSmallHard = MustparseQuery(`{st,sid,tt,users(name == "Leonid"){name}}`)
+	requestMediumSimple = MustparseQuery(`{person{name{fullName}}}`)
+	requestMediumMedium = MustparseQuery(`{person{name{fullName},email,geo{city,state},bio}}`)
+	requestMediumHard = MustparseQuery(`{person{name{fullName},email,geo{city,state},bio},users(id > 20){username}}`)
+	requestLargeSimple = MustparseQuery(`{users{username}}`)
+	requestLargeMedium = MustparseQuery(`{topics{topics{title,fancy_title}}}`)
+	requestLargeHard = MustparseQuery(`{users{username},topics{topics(visible == true){posters{description}}}}`)
 }
+
+//----------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
+//                                                    PARSE
+//----------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
+
+func TestParseRequest(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		t.Helper()
+		ParseSmall()
+		ParseMedium()
+		ParseLarge()
+	})
+}
+
+func ParseSmall() {
+	var p Parser
+	v, err := p.Parse(smallFixture)
+	if err != nil {
+		log.Fatalf("cannot parse json: %s", err)
+	}
+	_ = v
+}
+
+func ParseMedium() {
+	var p Parser
+	v, err := p.Parse(mediumFixture)
+	if err != nil {
+		log.Fatalf("cannot parse json: %s", err)
+	}
+	_ = v
+}
+
+func ParseLarge() {
+	var p Parser
+	v, err := p.Parse(largeFixture)
+	if err != nil {
+		log.Fatalf("cannot parse json: %s", err)
+	}
+	_ = v
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
+//                                                    KEEP
+//----------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
 
 func TestKeepRequest(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
@@ -70,67 +115,24 @@ func TestKeepRequest(t *testing.T) {
 	})
 }
 
-func TestCheckRequest(t *testing.T) {
-	t.Run("success", func(t *testing.T) {
-		TestCheckSmallRequestSuccess(t)
-		TestCheckMediumRequestSuccess(t)
-		TestCheckLargeRequestSuccess(t)
-	})
-
-	t.Run("error", func(t *testing.T) {
-		// testParseRawNumberError(t, "xyz", "xyz")
-	})
-}
-
 func TestKeepSmallRequestSuccess(t *testing.T) {
 	t.Helper()
-
 	KeepSmallSimple()
 	KeepSmallMedium()
 	KeepSmallHard()
-
 }
 
 func TestKeepMediumRequestSuccess(t *testing.T) {
 	t.Helper()
-
 	KeepMediumSimple()
 	KeepMediumMedium()
 	KeepMediumHard()
-
 }
 func TestKeepLargeRequestSuccess(t *testing.T) {
 	t.Helper()
-
 	KeepLargeSimple()
 	KeepLargeMedium()
 	KeepLargeHard()
-
-}
-func TestCheckSmallRequestSuccess(t *testing.T) {
-	t.Helper()
-
-	CheckSmallSimple()
-	CheckSmallMedium()
-	CheckSmallHard()
-
-}
-
-func TestCheckMediumRequestSuccess(t *testing.T) {
-	t.Helper()
-
-	CheckMediumSimple()
-	CheckMediumMedium()
-	CheckMediumHard()
-
-}
-func TestCheckLargeRequestSuccess(t *testing.T) {
-	t.Helper()
-
-	CheckLargeSimple()
-	CheckLargeMedium()
-	CheckLargeHard()
-
 }
 
 //
@@ -210,7 +212,47 @@ func KeepLargeHard() {
 	}
 }
 
-// CHECK
+//----------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
+//                                                    CHECK
+//----------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
+
+func TestCheckRequest(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		TestCheckSmallRequestSuccess(t)
+		TestCheckMediumRequestSuccess(t)
+		TestCheckLargeRequestSuccess(t)
+	})
+
+	t.Run("error", func(t *testing.T) {
+		// testParseRawNumberError(t, "xyz", "xyz")
+	})
+}
+
+func TestCheckSmallRequestSuccess(t *testing.T) {
+	t.Helper()
+	CheckSmallSimple()
+	CheckSmallMedium()
+	CheckSmallHard()
+}
+
+func TestCheckMediumRequestSuccess(t *testing.T) {
+	t.Helper()
+	CheckMediumSimple()
+	CheckMediumMedium()
+	CheckMediumHard()
+}
+func TestCheckLargeRequestSuccess(t *testing.T) {
+	t.Helper()
+	CheckLargeSimple()
+	CheckLargeMedium()
+	CheckLargeHard()
+}
+
+//
+// SMALL DATASET
+//
 
 func CheckSmallSimple() {
 
