@@ -23,7 +23,7 @@ const (
 )
 
 var cmdRegex = regexp.MustCompile(`^([a-z_]+)?(?:\(([^{\}\)\(]*)\))?{(.*)}$`)
-var filterRegex = regexp.MustCompile(`(?:([a-z_]+)\s*([><!:=]+)\s*((?:[^&\(\)\{}\s\")]+|(?:\"[^&\(\)\{}]*\")))\s*)+`)
+var filterRegex = regexp.MustCompile(`(?:([a-zA-Z_-]+)\s*([><!:=]+)\s*((?:[^&\(\)\{}\s\")]+|(?:\"[^&\(\)\{}]*\")))\s*)+`)
 
 // Operation is common possible operations in filters (==, ===, !=, !==, >, <, >=, <=, :).
 type Operation string
