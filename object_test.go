@@ -10,15 +10,15 @@ var (
 	mediumFixtureValue *Value
 	largeFixtureValue  *Value
 
-	requestSmallSimple  *Level
-	requestSmallMedium  *Level
-	requestSmallHard    *Level
-	requestMediumSimple *Level
-	requestMediumMedium *Level
-	requestMediumHard   *Level
-	requestLargeSimple  *Level
-	requestLargeMedium  *Level
-	requestLargeHard    *Level
+	requestSmallSimple  *Query
+	requestSmallMedium  *Query
+	requestSmallHard    *Query
+	requestMediumSimple *Query
+	requestMediumMedium *Query
+	requestMediumHard   *Query
+	requestLargeSimple  *Query
+	requestLargeMedium  *Query
+	requestLargeHard    *Query
 )
 
 // Needed for bench on Keep and Check. We assume that the parsing was previously done.

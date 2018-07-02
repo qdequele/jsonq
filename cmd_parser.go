@@ -478,49 +478,46 @@ func newFilter(cmd string) []*Filter {
 	return filters
 }
 
-// Query is the exposed struct type for functions Keep, Check and Retrieve
-type Query Level
-
-// Level is a description of a level in a graphql like request
-type Level struct {
+// Query is a description of a Query in a graphql like request
+type Query struct {
 	filters  []*Filter
-	next     map[string]*Level
+	next     map[string]*Query
 	retrieve []string
 }
 
-func newLevel() Level {
-	return Level{
+func newQuery() Query {
+	return Query{
 		make([]*Filter, 0, 10),
-		make(map[string]*Level),
+		make(map[string]*Query),
 		make([]string, 0, 100),
 	}
 }
 
-func (l Level) print(level int) {
-	fmt.Printf("%s Filters :\n", strings.Repeat("\t", level))
+func (l Query) print(Query int) {
+	fmt.Printf("%s Filters :\n", strings.Repeat("\t", Query))
 	for _, filter := range l.filters {
-		fmt.Printf("%s - %s %s %q \n", strings.Repeat("\t", level), (*filter).key, filter.op, filter.val)
+		fmt.Printf("%s - %s %s %q \n", strings.Repeat("\t", Query), (*filter).key, filter.op, filter.val)
 	}
-	fmt.Printf("%s Retrieve :\n", strings.Repeat("\t", level))
+	fmt.Printf("%s Retrieve :\n", strings.Repeat("\t", Query))
 	for _, retrieve := range l.retrieve {
 		if len(retrieve) > 0 {
-			fmt.Printf("%s - %s\n", strings.Repeat("\t", level), retrieve)
+			fmt.Printf("%s - %s\n", strings.Repeat("\t", Query), retrieve)
 		}
 	}
-	fmt.Printf("%s Next :\n", strings.Repeat("\t", level))
+	fmt.Printf("%s Next :\n", strings.Repeat("\t", Query))
 	for _, next := range l.next {
-		next.print(level + 1)
+		next.print(Query + 1)
 	}
 }
 
-// Print will recursively show the content of levels.
-func (l Level) Print() {
+// Print will recursively show the content of Querys.
+func (l Query) Print() {
 	l.print(0)
 }
 
-func parseQuery(cmd string) (level *Level, levelName string, err error) {
+func parseQuery(cmd string) (Query *Query, QueryName string, err error) {
 	matches := cmdRegex.FindStringSubmatch(cmd)
-	lvl := newLevel()
+	lvl := newQuery()
 	if len(matches[2]) > 0 {
 		for _, filter := range newFilter(matches[2]) {
 			if filter != nil {
@@ -531,8 +528,8 @@ func parseQuery(cmd string) (level *Level, levelName string, err error) {
 	if len(matches[3]) > 0 {
 		for _, attr := range splitComa(matches[3]) {
 			if strings.ContainsAny(attr, "(){}") {
-				newLevel, levelName, _ := parseQuery(attr)
-				lvl.next[levelName] = newLevel
+				newQuery, QueryName, _ := parseQuery(attr)
+				lvl.next[QueryName] = newQuery
 			} else {
 				lvl.retrieve = append(lvl.retrieve, attr)
 			}
@@ -542,13 +539,13 @@ func parseQuery(cmd string) (level *Level, levelName string, err error) {
 }
 
 // ParseQuery create a easy traversable structure from a graphql like query.
-func ParseQuery(cmd string) (parser *Level, err error) {
+func ParseQuery(cmd string) (parser *Query, err error) {
 	parser, _, err = parseQuery(cmd)
 	return parser, err
 }
 
 // MustParseQuery is parseQuery without error return. You should be sure of your query syntax !
-func MustParseQuery(cmd string) (parser *Level) {
+func MustParseQuery(cmd string) (parser *Query) {
 	parser, _, err := parseQuery(cmd)
 	if err != nil {
 		panic(err)
