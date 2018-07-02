@@ -564,6 +564,10 @@ func splitComa(line string) []string {
 			count++
 		case '}':
 			count--
+		case ' ', '\n', '\t':
+			if count == 0 {
+				firstIndex++
+			}
 		case ',':
 			if count == 0 {
 				array = append(array, string(runes[firstIndex:index]))
