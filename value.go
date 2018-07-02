@@ -352,7 +352,7 @@ func (v *Value) Search(keys ...string) ([]interface{}, error) {
 	return rValues, nil
 }
 
-func (v *Value) Check(request Level) error {
+func (v *Value) Check(request Query) error {
 	switch v.Type() {
 	case TypeArray:
 		pValue, err := v.Array()
@@ -377,7 +377,7 @@ func (v *Value) Check(request Level) error {
 			}
 		}
 		for name, next := range request.next {
-			err := pValue.Get(name).Check(*next)
+			err := pValue.Get(name).Check(Query(*next))
 			if err != nil {
 				return err
 			}
@@ -390,7 +390,7 @@ func (v *Value) Check(request Level) error {
 	}
 }
 
-func (v *Value) Keep(request Level) (string, error) {
+func (v *Value) Keep(request Query) (string, error) {
 	w := bytes.Buffer{}
 	switch v.Type() {
 	case TypeArray:
@@ -438,7 +438,7 @@ func (v *Value) Keep(request Level) (string, error) {
 		}
 		for name, next := range request.next {
 			i++
-			nValue, err := pValue.Get(name).Keep(*next)
+			nValue, err := pValue.Get(name).Keep(Query(*next))
 			if err != nil {
 				return "", err
 			}
@@ -471,7 +471,7 @@ func (v *Value) Keep(request Level) (string, error) {
 	}
 }
 
-func (v *Value) Retrieve(request Level) (string, error) {
+func (v *Value) Retrieve(request Query) (string, error) {
 	w := bytes.Buffer{}
 	switch v.Type() {
 	case TypeArray:
@@ -514,7 +514,7 @@ func (v *Value) Retrieve(request Level) (string, error) {
 		}
 		for name, next := range request.next {
 			i++
-			nValue, err := pValue.Get(name).Keep(*next)
+			nValue, err := pValue.Get(name).Keep(Query(*next))
 			if err != nil {
 				return "", err
 			}
