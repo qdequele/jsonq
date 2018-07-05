@@ -383,7 +383,7 @@ func checkContain(base, compared interface{}) bool {
 			b = strings.TrimLeft(b, `"`)
 			b = strings.TrimRight(b, `"`)
 			c = strings.ToLower(c)
-			return strings.Contains(b, c)
+			return strings.Contains(c, b)
 		}
 	}
 	return false
@@ -396,7 +396,7 @@ func checkNotContain(base, compared interface{}) bool {
 			b = strings.TrimLeft(b, `"`)
 			b = strings.TrimRight(b, `"`)
 			c = strings.ToLower(c)
-			return !strings.Contains(b, c)
+			return !strings.Contains(c, b)
 		}
 	}
 	return false
@@ -518,14 +518,14 @@ func (l Query) Print() {
 func parseQuery(cmd string) (Query *Query, QueryName string, err error) {
 	matches := cmdRegex.FindStringSubmatch(cmd)
 	lvl := newQuery()
-	if len(matches[2]) > 0 {
+	if len(matches) > 2 && len(matches[2]) > 0 {
 		for _, filter := range newFilter(matches[2]) {
 			if filter != nil {
 				lvl.filters = append(lvl.filters, filter)
 			}
 		}
 	}
-	if len(matches[3]) > 0 {
+	if len(matches) > 3 && len(matches[3]) > 0 {
 		for _, attr := range splitComa(matches[3]) {
 			if strings.ContainsAny(attr, "(){}") {
 				newQuery, QueryName, _ := parseQuery(attr)
