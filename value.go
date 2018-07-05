@@ -37,6 +37,9 @@ func (v *Value) reset() {
 }
 
 func (v *Value) check(filter Filter) bool {
+	if v == nil {
+		return false
+	}
 	switch v.Type() {
 	case TypeString:
 		// fmt.Println("TypeString")
@@ -503,13 +506,16 @@ func (v *Value) Retrieve(request Query) (string, error) {
 		i := 0
 		for _, retrieve := range request.retrieve {
 			i++
-			w.WriteRune('"')
-			w.WriteString(retrieve)
-			w.WriteRune('"')
-			w.WriteRune(':')
-			w.WriteString(pValue.Get(retrieve).String())
-			if i < len(request.next)+len(request.retrieve) {
-				w.WriteRune(',')
+			val := pValue.Get(retrieve)
+			if val != nil {
+				w.WriteRune('"')
+				w.WriteString(retrieve)
+				w.WriteRune('"')
+				w.WriteRune(':')
+				w.WriteString(val.String())
+				if i < len(request.next)+len(request.retrieve) {
+					w.WriteRune(',')
+				}
 			}
 		}
 		for name, next := range request.next {
