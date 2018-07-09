@@ -25,23 +25,23 @@ func main() {
 		defer pprof.StopCPUProfile()
 	}
 
-	querry := `{users(username :: "^s.*"){username},topics{topics(visible == true){posters{description}}}}`
+	querry := `(ua:User){ip, tz}`
 
 	var p jsonq.Parser
-	v, err := p.Parse(largeFixture)
+	v, err := p.Parse(smallFixture)
 	if err != nil {
 		log.Fatalf("cannot parse json: %s", err)
 	}
 
 	request := jsonq.MustParseQuery(querry)
-	// request.Print()
-	newvalue, err := v.Keep(*request)
+	request.Print()
+	err = v.Check(*request)
 	if err != nil {
 		fmt.Println("NOK")
 	} else {
 		fmt.Println("OK")
 	}
-	fmt.Println(newvalue)
+	// fmt.Println(newvalue)
 }
 
 func getAllKeys(data interface{}) {

@@ -57,7 +57,6 @@ func (o Operation) check(base, compared interface{}) bool {
 	default:
 		return false
 	}
-	return true
 }
 
 func findOperation(line string) Operation {
@@ -480,9 +479,10 @@ func newFilter(cmd string) []*Filter {
 
 // Query is a description of a Query in a graphql like request
 type Query struct {
-	filters  []*Filter
-	next     map[string]*Query
-	retrieve []string
+	filters     []*Filter
+	next        map[string]*Query
+	retrieve    []string
+	keepFilters bool
 }
 
 func newQuery() Query {
@@ -490,6 +490,7 @@ func newQuery() Query {
 		make([]*Filter, 0, 10),
 		make(map[string]*Query),
 		make([]string, 0, 100),
+		false,
 	}
 }
 
@@ -524,11 +525,17 @@ func parseQuery(cmd string) (Query *Query, QueryName string, err error) {
 				lvl.filters = append(lvl.filters, filter)
 			}
 		}
+		if len(lvl.filters) > 0 {
+			lvl.keepFilters = true
+		}
 	}
 	if len(matches) > 3 && len(matches[3]) > 0 {
 		for _, attr := range splitComa(matches[3]) {
 			if strings.ContainsAny(attr, "(){}") {
 				newQuery, QueryName, _ := parseQuery(attr)
+				if newQuery.keepFilters == true {
+					lvl.keepFilters = true
+				}
 				lvl.next[QueryName] = newQuery
 			} else {
 				lvl.retrieve = append(lvl.retrieve, attr)
