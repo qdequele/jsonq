@@ -439,6 +439,13 @@ type Filter struct {
 	val interface{}
 }
 
+func (f Filter) eq(other Filter) bool {
+	bkey := f.key == other.key
+	bop := f.op == other.op
+	bval := fmt.Sprintln(f.val) == fmt.Sprintln(other.val)
+	return bkey && bop && bval
+}
+
 func (f Filter) check(compareTo interface{}) bool {
 	return f.op.check(f.val, compareTo)
 }
@@ -485,11 +492,30 @@ type Query struct {
 	keepFilters bool
 }
 
+func (q Query) eq(other Query) bool {
+	for index, filter := range q.filters {
+		if other.filters[index] == nil || !filter.eq(*other.filters[index]) {
+			return false
+		}
+	}
+	for key, query := range q.next {
+		if other.next[key] == nil || !query.eq(*other.next[key]) {
+			return false
+		}
+	}
+	for index, retrieve := range q.retrieve {
+		if retrieve != other.retrieve[index] {
+			return false
+		}
+	}
+	return true
+}
+
 func newQuery() Query {
 	return Query{
-		make([]*Filter, 0, 10),
-		make(map[string]*Query),
-		make([]string, 0, 100),
+		[]*Filter{},
+		map[string]*Query{},
+		[]string{},
 		false,
 	}
 }
@@ -519,6 +545,9 @@ func (l Query) Print() {
 func parseQuery(cmd string) (Query *Query, QueryName string, err error) {
 	matches := cmdRegex.FindStringSubmatch(cmd)
 	lvl := newQuery()
+	if len(matches) == 0 {
+		return nil, "", fmt.Errorf("mal formated")
+	}
 	if len(matches) > 2 && len(matches[2]) > 0 {
 		for _, filter := range newFilter(matches[2]) {
 			if filter != nil {

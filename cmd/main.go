@@ -25,7 +25,7 @@ func main() {
 		defer pprof.StopCPUProfile()
 	}
 
-	querry := `(ua:User){ip, tz}`
+	querry := `(ua:User){ip, tz`
 
 	var p jsonq.Parser
 	v, err := p.Parse(smallFixture)
@@ -33,7 +33,11 @@ func main() {
 		log.Fatalf("cannot parse json: %s", err)
 	}
 
-	request := jsonq.MustParseQuery(querry)
+	request, err := jsonq.ParseQuery(querry)
+	if err != nil {
+		log.Fatalf("cannot parse json: %s", err)
+	}
+
 	request.Print()
 	err = v.Check(*request)
 	if err != nil {
