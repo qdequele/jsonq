@@ -25,7 +25,7 @@ func main() {
 		defer pprof.StopCPUProfile()
 	}
 
-	querry := `(ua:User){ip, tz`
+	querry := `(a>1|| b < c){}`
 
 	var p jsonq.Parser
 	v, err := p.Parse(smallFixture)

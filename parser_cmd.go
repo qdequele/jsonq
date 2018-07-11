@@ -8,36 +8,30 @@ import (
 )
 
 const (
-	eq          Operation = "==="
-	partialEq   Operation = "=="
-	diff        Operation = "!=="
-	partialDiff Operation = "!="
-	sup         Operation = ">"
-	supEq       Operation = ">="
-	inf         Operation = "<"
-	infEq       Operation = "<="
-	contain     Operation = ":"
-	notContain  Operation = "!:"
-	like        Operation = "::"
-	notLike     Operation = "!::"
+	eq         Operation = "="
+	diff       Operation = "!="
+	sup        Operation = ">"
+	supEq      Operation = ">="
+	inf        Operation = "<"
+	infEq      Operation = "<="
+	contain    Operation = ":"
+	notContain Operation = "!:"
+	like       Operation = "::"
+	notLike    Operation = "!::"
 )
 
-var cmdRegex = regexp.MustCompile(`^([a-z_]+)?(?:\(([^{\}\)\(]*)\))?{(.*)}$`)
+var cmdRegex = regexp.MustCompile(`^([a-z_]+)?(?:\(([^{\}\)\(]*)\))?(?:{(.*)})?$`)
 var filterRegex = regexp.MustCompile(`(?:([a-zA-Z_-]+)\s*([><!:=]+)\s*((?:[^&\(\)\{}\s\")]+|(?:\"[^&\(\)\{}]*\")))\s*)+`)
 
-// Operation is common possible operations in filters (==, ===, !=, !==, >, <, >=, <=, :).
+// Operation is common possible operations in filters (=, !=, >, <, >=, <=, :).
 type Operation string
 
 func (o Operation) check(base, compared interface{}) bool {
 	switch o {
 	case eq:
 		return checkEq(base, compared)
-	case partialEq:
-		return checkPartialEq(base, compared)
 	case diff:
 		return checkDiff(base, compared)
-	case partialDiff:
-		return checkPartialDiff(base, compared)
 	case sup:
 		return checkSup(base, compared)
 	case supEq:
@@ -59,34 +53,30 @@ func (o Operation) check(base, compared interface{}) bool {
 	}
 }
 
-func findOperation(line string) Operation {
+func findOperation(line string) (Operation, error) {
 	switch line {
-	case "===":
-		return eq
-	case "==":
-		return partialEq
-	case "!==":
-		return diff
+	case "=":
+		return eq, nil
 	case "!=":
-		return partialDiff
+		return diff, nil
 	case ">":
-		return sup
+		return sup, nil
 	case ">=":
-		return supEq
+		return supEq, nil
 	case "<":
-		return inf
+		return inf, nil
 	case "<=":
-		return infEq
+		return infEq, nil
 	case ":":
-		return contain
+		return contain, nil
 	case "!:":
-		return notContain
+		return notContain, nil
 	case "::":
-		return like
+		return like, nil
 	case "!::":
-		return notLike
+		return notLike, nil
 	default:
-		return "error"
+		return "error", fmt.Errorf("operation %s does not exist", line)
 	}
 }
 
@@ -127,42 +117,6 @@ func checkEq(base, compared interface{}) bool {
 	return false
 }
 
-func checkPartialEq(base, compared interface{}) bool {
-	switch v := base.(type) {
-	case bool:
-		if comp, ok := compared.(bool); ok == true {
-			return comp == v
-		}
-		return false
-	case int64:
-		if comp, ok := compared.(int64); ok == true && comp == v {
-			return true
-		} else if comp, ok := compared.(float64); ok == true && comp == float64(v) {
-			return true
-		}
-		return false
-	case float64:
-		if comp, ok := compared.(float64); ok == true && comp == v {
-			return true
-		} else if comp, ok := compared.(int64); ok == true && float64(comp) == v {
-			return true
-		}
-		return false
-	case string:
-		if comp, ok := compared.(string); ok == true {
-			return strings.Contains(comp, strings.Replace(v, "\"", "", -1))
-		}
-		return false
-	case []interface{}:
-		for _, key := range v {
-			if checkEq(key, compared) == true {
-				return true
-			}
-		}
-	}
-	return false
-}
-
 func checkDiff(base, compared interface{}) bool {
 	switch v := base.(type) {
 	case bool:
@@ -196,42 +150,6 @@ func checkDiff(base, compared interface{}) bool {
 			}
 		}
 		return true
-	}
-	return false
-}
-
-func checkPartialDiff(base, compared interface{}) bool {
-	switch v := base.(type) {
-	case bool:
-		if comp, ok := compared.(bool); ok == true {
-			return comp != v
-		}
-		return false
-	case int64:
-		if comp, ok := compared.(int64); ok == true && comp != v {
-			return true
-		} else if comp, ok := compared.(float64); ok == true && comp != float64(v) {
-			return true
-		}
-		return false
-	case float64:
-		if comp, ok := compared.(float64); ok == true && comp != v {
-			return true
-		} else if comp, ok := compared.(int64); ok == true && float64(comp) != v {
-			return true
-		}
-		return false
-	case string:
-		if comp, ok := compared.(string); ok == true && comp != v {
-			return true
-		}
-		return false
-	case []interface{}:
-		for _, key := range v {
-			if checkDiff(key, compared) != true {
-				return true
-			}
-		}
 	}
 	return false
 }
@@ -470,26 +388,39 @@ func typed(v string) interface{} {
 	return v
 }
 
-func newFilter(cmd string) []*Filter {
+func newFilter(cmd string) ([]*Filter, error) {
 	filters := make([]*Filter, 0, len(strings.Split(cmd, "&&")))
+	if strings.ContainsAny(cmd, "|") {
+		return nil, fmt.Errorf("Format error in filters : %q", cmd)
+	}
 	for _, match := range filterRegex.FindAllStringSubmatch(cmd, -1) {
+
 		if len(match[1]) > 0 && len(match[2]) > 0 && len(match[3]) > 0 {
+			op, err := findOperation(match[2])
+			if err != nil {
+				return nil, err
+			}
 			filters = append(filters, &Filter{
 				match[1],
-				findOperation(match[2]),
+				op,
 				typed(match[3]),
 			})
+		} else {
+			return nil, fmt.Errorf("Format error in filters : %q", match[0])
 		}
 	}
-	return filters
+	if len(filters) == 0 {
+		return nil, fmt.Errorf("Format error in filters : %q", cmd)
+	}
+	return filters, nil
 }
 
 // Query is a description of a Query in a graphql like request
 type Query struct {
-	filters     []*Filter
-	next        map[string]*Query
-	retrieve    []string
-	keepFilters bool
+	filters      []*Filter
+	next         map[string]*Query
+	retrieve     []string
+	stillFilters bool
 }
 
 func (q Query) eq(other Query) bool {
@@ -549,21 +480,25 @@ func parseQuery(cmd string) (Query *Query, QueryName string, err error) {
 		return nil, "", fmt.Errorf("mal formated")
 	}
 	if len(matches) > 2 && len(matches[2]) > 0 {
-		for _, filter := range newFilter(matches[2]) {
+		filters, err := newFilter(matches[2])
+		if err != nil {
+			return nil, "", err
+		}
+		for _, filter := range filters {
 			if filter != nil {
 				lvl.filters = append(lvl.filters, filter)
 			}
 		}
 		if len(lvl.filters) > 0 {
-			lvl.keepFilters = true
+			lvl.stillFilters = true
 		}
 	}
 	if len(matches) > 3 && len(matches[3]) > 0 {
 		for _, attr := range splitComa(matches[3]) {
 			if strings.ContainsAny(attr, "(){}") {
 				newQuery, QueryName, _ := parseQuery(attr)
-				if newQuery.keepFilters == true {
-					lvl.keepFilters = true
+				if newQuery.stillFilters == true {
+					lvl.stillFilters = true
 				}
 				lvl.next[QueryName] = newQuery
 			} else {

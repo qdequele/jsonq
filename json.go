@@ -70,7 +70,7 @@ func (v Value) Search(keys ...string) ([]interface{}, error) {
 	return rValues, nil
 }
 
-// Check
+// Check .
 func (v Value) Check(request Query) error {
 	switch v.Type() {
 	case TypeArray:
@@ -90,7 +90,7 @@ func (v Value) Check(request Query) error {
 		if err != nil {
 			return err
 		}
-		if request.keepFilters {
+		if request.stillFilters {
 			for _, filter := range request.filters {
 				nValue := pValue.Get(filter.key)
 				if nValue != nil && nValue.check(*filter) == false {
