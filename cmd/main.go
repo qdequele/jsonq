@@ -25,7 +25,7 @@ func main() {
 		defer pprof.StopCPUProfile()
 	}
 
-	querry := `(a>1|| b < c){}`
+	querry := `{gr, uuid}`
 
 	var p jsonq.Parser
 	v, err := p.Parse(smallFixture)
@@ -38,14 +38,14 @@ func main() {
 		log.Fatalf("cannot parse json: %s", err)
 	}
 
-	request.Print()
-	err = v.Check(*request)
+	// request.Print()
+	newvalue, err := v.Retrieve(*request)
 	if err != nil {
 		fmt.Println("NOK")
 	} else {
 		fmt.Println("OK")
 	}
-	// fmt.Println(newvalue)
+	fmt.Println(newvalue)
 }
 
 func getAllKeys(data interface{}) {

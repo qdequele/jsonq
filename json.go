@@ -158,7 +158,7 @@ func (v Value) Keep(request Query) (string, error) {
 			w.WriteString(retrieve)
 			w.WriteRune('"')
 			w.WriteRune(':')
-			w.WriteString(pValue.Get(retrieve).String())
+			w.WriteString(pValue.Get(retrieve).Description)
 			if i < len(request.next)+len(request.retrieve) {
 				w.WriteRune(',')
 			}
@@ -180,19 +180,8 @@ func (v Value) Keep(request Query) (string, error) {
 		}
 		w.WriteRune('}')
 		return w.String(), nil
-	case TypeString:
-		return fmt.Sprintf("%q", v.s), nil
-	case TypeNumber:
-		if float64(int(v.n)) == v.n {
-			return fmt.Sprintf("%d", int(v.n)), nil
-		}
-		return fmt.Sprintf("%f", v.n), nil
-	case TypeFalse:
-		return "false", nil
-	case TypeTrue:
-		return "true", nil
-	case TypeNull:
-		return "null", nil
+	case TypeString, TypeNumber, TypeFalse, TypeTrue, TypeNull:
+		return v.Description, nil
 	default:
 		return "", fmt.Errorf("Type not recognized")
 	}
@@ -259,19 +248,8 @@ func (v Value) Retrieve(request Query) (string, error) {
 		}
 		w.WriteRune('}')
 		return w.String(), nil
-	case TypeString:
-		return fmt.Sprintf("%q", v.s), nil
-	case TypeNumber:
-		if float64(int(v.n)) == v.n {
-			return fmt.Sprintf("%d", int(v.n)), nil
-		}
-		return fmt.Sprintf("%f", v.n), nil
-	case TypeFalse:
-		return "false", nil
-	case TypeTrue:
-		return "true", nil
-	case TypeNull:
-		return "null", nil
+	case TypeString, TypeNumber, TypeFalse, TypeTrue, TypeNull:
+		return v.Description, nil
 	default:
 		return "", fmt.Errorf("Type not recognized")
 	}

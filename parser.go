@@ -120,6 +120,7 @@ func parseValue(s string, c *cache) (*Value, string, error) {
 		v := c.getValue()
 		v.t = typeRawString
 		v.s = ss
+		v.Description = fmt.Sprintf("%q", ss)
 		return v, tail, nil
 	}
 	if s[0] == 't' {
@@ -148,6 +149,7 @@ func parseValue(s string, c *cache) (*Value, string, error) {
 	v := c.getValue()
 	v.t = typeRawNumber
 	v.s = ns
+	v.Description = ns
 	return v, tail, nil
 }
 
@@ -478,11 +480,12 @@ func (o *Object) Visit(f func(key []byte, v *Value)) {
 // Value cannot be used from concurrent goroutines.
 // Use per-goroutine parsers or ParserPool instead.
 type Value struct {
-	o Object
-	a []*Value
-	s string
-	n float64
-	t Type
+	o           Object
+	a           []*Value
+	s           string
+	n           float64
+	t           Type
+	Description string
 }
 
 func (v *Value) reset() {
@@ -491,6 +494,7 @@ func (v *Value) reset() {
 	v.s = ""
 	v.n = 0
 	v.t = TypeNull
+	v.Description = ""
 }
 
 // String returns string representation of the v.
@@ -790,9 +794,9 @@ func (v *Value) Bool() (bool, error) {
 }
 
 var (
-	valueTrue   = &Value{t: TypeTrue}
-	valueFalse  = &Value{t: TypeFalse}
-	valueNull   = &Value{t: TypeNull}
+	valueTrue   = &Value{t: TypeTrue, Description: "true"}
+	valueFalse  = &Value{t: TypeFalse, Description: "false"}
+	valueNull   = &Value{t: TypeNull, Description: "null"}
 	emptyObject = &Value{t: TypeObject}
 	emptyArray  = &Value{t: TypeArray}
 )
